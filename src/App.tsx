@@ -8,7 +8,6 @@ import {
   Platform,
   AsyncStorage,
   FlatList,
-  Text,
   Button
 } from "react-native";
 
@@ -31,6 +30,21 @@ export default class App extends React.Component<ITodoListState> {
     viewPadding: viewPadding
   }
 
+  async componentDidMount() {
+    Keyboard.addListener(
+      isAndroid ? "keyboardDidShow" : "keyboardWillShow",
+      e => this.setState({ viewPadding: e.endCoordinates.height + viewPadding })
+    );
+
+    Keyboard.addListener(
+      isAndroid ? "keyboardDidHide" : "keyboardWillHide",
+      () => this.setState({ viewPadding: viewPadding })
+    );
+
+    const tasks = await this.getTasksFromStorage()
+    this.setState({tasks});
+  }
+
   addTask = () => {
     if (this.state.text.trim().length > 0) {
       this.setState(
@@ -42,7 +56,7 @@ export default class App extends React.Component<ITodoListState> {
             text: ""
           };
         },
-        () => Tasks.save(this.state.tasks)
+        () => AsyncStorage.setItem("TASKS", JSON.stringify(this.state.tasks))
       );
     }
   };
@@ -56,7 +70,7 @@ export default class App extends React.Component<ITodoListState> {
 
         return { tasks: tasks };
       },
-      () => Tasks.save(this.state.tasks)
+      () => AsyncStorage.setItem("TASKS", JSON.stringify(this.state.tasks))
     );
   };
 
@@ -76,18 +90,10 @@ export default class App extends React.Component<ITodoListState> {
     )
   }
 
-  componentDidMount() {
-    Keyboard.addListener(
-      isAndroid ? "keyboardDidShow" : "keyboardWillShow",
-      e => this.setState({ viewPadding: e.endCoordinates.height + viewPadding })
-    );
+  async getTasksFromStorage() {
+    const items = await AsyncStorage.getItem("TASKS");
 
-    Keyboard.addListener(
-      isAndroid ? "keyboardDidHide" : "keyboardWillHide",
-      () => this.setState({ viewPadding: viewPadding })
-    );
-
-    Tasks.all((tasks: ITaskProps) => this.setState({ tasks: tasks || [] }));
+    return items && items.length ? JSON.parse(items) : [];
   }
 
   render(): JSX.Element {
@@ -102,6 +108,7 @@ export default class App extends React.Component<ITodoListState> {
                 <View style={{ flex: 0.90 }}>
                   <View>
                     <CheckBox
+                      textStyle={task.item.isCompleted ? {textDecorationLine: 'line-through'} : {}}
                       title={task.item.text}
                       checked={task.item.isCompleted}
                       onPress={() => this.toggleStatus(task.index)}
@@ -116,6 +123,7 @@ export default class App extends React.Component<ITodoListState> {
             </View>}
         />
         <TextInput
+          underlineColorAndroid='rgba(0,0,0,0)'
           style={styles.textInput}
           onChangeText={(text) => this.setState({ text: text })}
           onSubmitEditing={this.addTask}
@@ -128,18 +136,6 @@ export default class App extends React.Component<ITodoListState> {
     );
   }
 }
-
-let Tasks = {
-  all(callback: Function) {
-    return AsyncStorage.getItem("TASKS", (err, tasks) =>
-      tasks ? JSON.parse(tasks) : ""
-    );
-  },
-
-  save(tasks: ITaskProps) {
-    AsyncStorage.setItem("TASKS", JSON.stringify(tasks));
-  }
-};
 
 const styles = StyleSheet.create({
   container: {
@@ -155,8 +151,8 @@ const styles = StyleSheet.create({
     paddingRight: 10,
     paddingLeft: 10,
     borderColor: "gray",
-    borderWidth: 0,
-    width: "100%"
+    borderWidth: 1,
+    width: "100%",
   },
   list: {
     width: "100%"
