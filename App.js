@@ -1,3 +1,3 @@
-import TodoList from './src/TodoList';
+import App from './src/App';
 
-export default TodoList;
+export default App;

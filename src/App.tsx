@@ -14,16 +14,20 @@ import {
 const isAndroid = Platform.OS == "android";
 const viewPadding = 10;
 
+type ITaskProps = Array<{ key: string, text: string }>;
+
 export interface ITodoListState {
-  tasks: Array<{ key: number, text: string }>;
-  text: string
+  tasks: ITaskProps;
+  text: string;
+  viewPadding?: string | number;
 }
 
-export default class TodoList extends React.Component<ITodoListState> {
+export default class App extends React.Component<ITodoListState> {
 
   state = {
     tasks: [],
-    text: ""
+    text: "",
+    viewPadding: viewPadding
   }
 
   addTask = () => {
@@ -32,7 +36,7 @@ export default class TodoList extends React.Component<ITodoListState> {
         (prevState: ITodoListState) => {
           let { tasks, text } = prevState;
           return {
-            tasks: tasks.concat({ key: tasks.length, text: text }),
+            tasks: tasks.concat({ key: String(tasks.length), text: text }),
             text: ""
           };
         },
@@ -65,22 +69,22 @@ export default class TodoList extends React.Component<ITodoListState> {
       () => this.setState({ viewPadding: viewPadding })
     );
 
-    Tasks.all((tasks: Array<{ key: number, text: string }>) => this.setState({ tasks: tasks || [] }));
+    Tasks.all((tasks: ITaskProps) => this.setState({ tasks: tasks || [] }));
   }
 
   render(): JSX.Element {
     return (
-      <View style={[styles.container, { paddingBottom: 10 }]}>
+      <View style={[styles.container, { paddingBottom: this.state.viewPadding }]}>
         <FlatList
           style={styles.list}
           data={this.state.tasks}
-          renderItem={({ item, index }: any) =>
+          renderItem={(task: {index: number, item: {text: string}}) =>
             <View>
               <View style={styles.listItemCont}>
                 <Text style={styles.listItem}>
-                  {item.text}
+                  {task.item.text}
                 </Text>
-                <Button title="X" onPress={() => this.deleteTask(index)} />
+                <Button title="X" onPress={() => this.deleteTask(task.index)} />
               </View>
               <View style={styles.hr} />
             </View>}
@@ -100,24 +104,14 @@ export default class TodoList extends React.Component<ITodoListState> {
 }
 
 let Tasks = {
-  convertToArrayOfObject(tasks: string, callback: Function) {
-    return callback(
-      tasks ? tasks.split("||").map((task, i) => ({ key: i, text: task })) : []
-    );
-  },
-
-  convertToStringWithSeparators(tasks: Array<{ key: number, text: string }>): string {
-    return tasks.map(task => task.text).join("||");
-  },
-
   all(callback: Function) {
     return AsyncStorage.getItem("TASKS", (err, tasks) =>
-      this.convertToArrayOfObject(tasks ? tasks : "", callback)
+      tasks ? JSON.parse(tasks) : ""
     );
   },
 
-  save(tasks: Array<{ key: number, text: string }>) {
-    AsyncStorage.setItem("TASKS", this.convertToStringWithSeparators(tasks));
+  save(tasks: ITaskProps) {
+    AsyncStorage.setItem("TASKS", JSON.stringify(tasks));
   }
 };
 
@@ -127,7 +121,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F5FCFF",
-    padding: 10,
+    padding: viewPadding,
     paddingTop: 20
   },
   textInput: {
@@ -148,12 +142,13 @@ const styles = StyleSheet.create({
   },
   hr: {
     height: 1,
-    backgroundColor: "gray"
+    backgroundColor: "gray",
+    marginTop: 5,
+    marginBottom: 5
   },
   listItemCont: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between"
   },
-
 });
