@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { CheckBox } from 'react-native-elements';
 import {
   StyleSheet,
   View,
@@ -14,7 +15,7 @@ import {
 const isAndroid = Platform.OS == "android";
 const viewPadding = 10;
 
-type ITaskProps = Array<{ key: string, text: string }>;
+type ITaskProps = Array<{ key: string, text: string, isCompleted?: boolean }>;
 
 export interface ITodoListState {
   tasks: ITaskProps;
@@ -35,8 +36,9 @@ export default class App extends React.Component<ITodoListState> {
       this.setState(
         (prevState: ITodoListState) => {
           let { tasks, text } = prevState;
+          const currentTaskIndex = tasks.length ? Number(tasks[tasks.length - 1].key) + 1 : 0;
           return {
-            tasks: tasks.concat({ key: String(tasks.length), text: text }),
+            tasks: tasks.concat({ key: String(currentTaskIndex), text: text }),
             text: ""
           };
         },
@@ -58,6 +60,22 @@ export default class App extends React.Component<ITodoListState> {
     );
   };
 
+  toggleStatus = (index: number) => {
+    this.setState(
+      (prevState: ITodoListState) => {
+        let updatedTasks = prevState.tasks.map((task, taskIndex) => {
+          if (taskIndex === index) {
+            return { ...task, isCompleted: !task.isCompleted }
+          }
+
+          return task;
+        });
+
+        return { tasks: updatedTasks };
+      }
+    )
+  }
+
   componentDidMount() {
     Keyboard.addListener(
       isAndroid ? "keyboardDidShow" : "keyboardWillShow",
@@ -78,13 +96,21 @@ export default class App extends React.Component<ITodoListState> {
         <FlatList
           style={styles.list}
           data={this.state.tasks}
-          renderItem={(task: {index: number, item: {text: string}}) =>
+          renderItem={(task: { index: number, item: { text: string, key: string, isCompleted: boolean } }) =>
             <View>
-              <View style={styles.listItemCont}>
-                <Text style={styles.listItem}>
-                  {task.item.text}
-                </Text>
-                <Button title="X" onPress={() => this.deleteTask(task.index)} />
+              <View style={[styles.listItemCont]}>
+                <View style={{ flex: 0.90 }}>
+                  <View>
+                    <CheckBox
+                      title={task.item.text}
+                      checked={task.item.isCompleted}
+                      onPress={() => this.toggleStatus(task.index)}
+                    />
+                  </View>
+                </View>
+                <View style={{ flex: 0.10, alignItems: 'center', justifyContent: 'flex-end', marginRight: 1 }}>
+                  <Button title="X" onPress={() => this.deleteTask(task.index)} />
+                </View>
               </View>
               <View style={styles.hr} />
             </View>}
@@ -149,6 +175,7 @@ const styles = StyleSheet.create({
   listItemCont: {
     flexDirection: "row",
     alignItems: "center",
+    flex: 1,
     justifyContent: "space-between"
   },
 });
