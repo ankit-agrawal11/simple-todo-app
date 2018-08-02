@@ -100,29 +100,29 @@ export default class App extends React.Component<{}, ITodoListState> {
     return (
       <View style={[styles.container, { paddingBottom: this.state.viewPadding }]}>
         <FlatList
+          testID='flat-list'
           style={styles.list}
           data={this.state.tasks}
           renderItem={(task: { index: number, item: { text: string, key: string, isCompleted: boolean } }) =>
             <View>
               <View style={[styles.listItemCont]}>
-                <View style={{ flex: 0.90 }}>
-                  <View>
-                    <CheckBox
-                      textStyle={task.item.isCompleted ? {textDecorationLine: 'line-through'} : {}}
-                      title={task.item.text}
-                      checked={task.item.isCompleted}
-                      onPress={() => this.toggleStatus(task.index)}
-                    />
-                  </View>
+                <View testID='checkbox' style={{ flex: 0.90 }}>
+                  <CheckBox
+                    textStyle={task.item.isCompleted ? {textDecorationLine: 'line-through'} : {}}
+                    title={task.item.text}
+                    checked={task.item.isCompleted}
+                    onPress={() => this.toggleStatus(task.index)}
+                  />
                 </View>
-                <View style={{ flex: 0.10, alignItems: 'center', justifyContent: 'flex-end', marginRight: 1 }}>
-                  <Button title="X" onPress={() => this.deleteTask(task.index)} />
+                <View testID="delete-task-wrapper" style={{ flex: 0.10, alignItems: 'center', justifyContent: 'flex-end', marginRight: 1 }}>
+                  <Button testID="delete-task" title="X" onPress={() => this.deleteTask(task.index)} />
                 </View>
               </View>
               <View style={styles.hr} />
             </View>}
         />
         <TextInput
+          testID='text-input'
           underlineColorAndroid='rgba(0,0,0,0)'
           style={styles.textInput}
           onChangeText={(text) => this.setState({ text: text })}
