@@ -22,7 +22,7 @@ export interface ITodoListState {
   viewPadding?: string | number;
 }
 
-export default class App extends React.Component<ITodoListState> {
+export default class App extends React.Component<{}, ITodoListState> {
 
   state = {
     tasks: [],
