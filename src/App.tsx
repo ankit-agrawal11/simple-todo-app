@@ -33,12 +33,12 @@ export default class App extends React.Component<{}, ITodoListState> {
   async componentDidMount() {
     Keyboard.addListener(
       isAndroid ? "keyboardDidShow" : "keyboardWillShow",
-      e => this.setState({ viewPadding: e.endCoordinates.height + viewPadding })
+      (e) => this.setState({ viewPadding: e.endCoordinates.height + viewPadding })
     );
 
     Keyboard.addListener(
       isAndroid ? "keyboardDidHide" : "keyboardWillHide",
-      () => this.setState({ viewPadding: viewPadding })
+      () => this.setState({ viewPadding })
     );
 
     const tasks = await this.getTasksFromStorage()
@@ -96,6 +96,27 @@ export default class App extends React.Component<{}, ITodoListState> {
     return items && items.length ? JSON.parse(items) : [];
   }
 
+  renderSingleTask(task: { index: number, item: { text: string, key: string, isCompleted: boolean } }) {
+    return (
+      <View>
+        <View style={[styles.listItemCount]}>
+          <View testID='checkbox' style={{ flex: 0.90 }}>
+            <CheckBox
+              textStyle={task.item.isCompleted ? {textDecorationLine: 'line-through'} : {}}
+              title={task.item.text}
+              checked={task.item.isCompleted}
+              onPress={() => this.toggleStatus(task.index)}
+            />
+          </View>
+          <View testID="delete-task-wrapper" style={{ flex: 0.10, alignItems: 'center', justifyContent: 'flex-end', marginRight: 1 }}>
+            <Button testID="delete-task" title="X" onPress={() => this.deleteTask(task.index)} />
+          </View>
+        </View>
+        <View style={styles.hr} />
+      </View>
+    );
+  }
+
   render(): JSX.Element {
     return (
       <View style={[styles.container, { paddingBottom: this.state.viewPadding }]}>
@@ -104,22 +125,7 @@ export default class App extends React.Component<{}, ITodoListState> {
           style={styles.list}
           data={this.state.tasks}
           renderItem={(task: { index: number, item: { text: string, key: string, isCompleted: boolean } }) =>
-            <View>
-              <View style={[styles.listItemCont]}>
-                <View testID='checkbox' style={{ flex: 0.90 }}>
-                  <CheckBox
-                    textStyle={task.item.isCompleted ? {textDecorationLine: 'line-through'} : {}}
-                    title={task.item.text}
-                    checked={task.item.isCompleted}
-                    onPress={() => this.toggleStatus(task.index)}
-                  />
-                </View>
-                <View testID="delete-task-wrapper" style={{ flex: 0.10, alignItems: 'center', justifyContent: 'flex-end', marginRight: 1 }}>
-                  <Button testID="delete-task" title="X" onPress={() => this.deleteTask(task.index)} />
-                </View>
-              </View>
-              <View style={styles.hr} />
-            </View>}
+            this.renderSingleTask(task)}
         />
         <TextInput
           testID='text-input'
@@ -168,7 +174,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     marginBottom: 5
   },
-  listItemCont: {
+  listItemCount: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
